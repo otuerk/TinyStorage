@@ -21,17 +21,14 @@ import OSLog
 /// - Uses indirect observation to propogate changes to SwiftUI, by using keySignals (which is itself observationIgnored because we don't want changes to one key affecting other keys, so we use Observation on the KeySignal itself that it holds). This prevents internal modifications of dictionaryRepresentation (our main in-memory store) from triggering code in the Observation system before we're done, which can cause re-entrancy/deadlock issues.
 ///
 /// Also note that we annotate TinyStorage as `nonisolated` as in Swift 6 MainActor is default for classes, which we do not want for TinyStorage, so we undo that (and make it not isolated) by using `nonisolated` so we can continue to handle all the threading/synchronization ourselves and allow TinyStorage to be called from any thread (except for the functions explicitly marked MainActor).
-@Observable
 nonisolated public final class TinyStorage: @unchecked Sendable {
     private let directoryURL: URL
     public let fileURL: URL
     
     /// Private in-memory store so each request doesn't have to go to disk.
     /// Note that as Data is stored (implementation oddity, using Codable you can't encode an abstract [String: any Codable] to Data) rather than the Codable object directly, it is decoded before being returned.
-    @ObservationIgnored
     private var dictionaryRepresentation: [String: Data]
     
-    @ObservationIgnored
     private var keySignals: [String: KeySignal] = [:]
 
     private enum GenerationState {
@@ -43,7 +40,6 @@ nonisolated public final class TinyStorage: @unchecked Sendable {
     }
 
     /// Track the last known file generation identifier so we can ignore change notifications emitted for our own atomic writes.
-    @ObservationIgnored
     private var generationState: GenerationState = .unknown
     
     /// Coordinates access to in-memory store
@@ -1325,7 +1321,6 @@ public struct TinyStorageItem<T: Codable>: DynamicProperty {
 }
 
 @MainActor
-@Observable
 private final class KeySignal {
     public private(set) var value: UInt = 0
     
