@@ -69,7 +69,7 @@ nonisolated public final class TinyStorage: @unchecked Sendable {
     ///   - name: The name of the directory that will be created to store the backing plist file.
     ///
     ///  - Note: TinyStorage creates a directory that the backing plist files lives in, for instance if you specify your name as "tinystorage-general-prefs" the file will live in ./tiny-storage-general-prefs/tiny-storage.plist where . is the directory you pass as `insideDirectory`.
-    public init(insideDirectory: URL, name: String, logger: TinyStorageLogging = OSLogTinyStorageLogger()) {
+    public init(insideDirectory: URL, name: String, logger: TinyStorageLogging? = nil, logThreshold: TinyStorageLogLevel = .trace) {
         let dispatchQueue = DispatchQueue(label: "TinyStorageInMemory", attributes: .concurrent)
         dispatchQueue.setSpecific(key: dispatchQueueKey, value: ())
         self.dispatchQueue = dispatchQueue
@@ -80,9 +80,10 @@ nonisolated public final class TinyStorage: @unchecked Sendable {
         let fileURL = directoryURL.appending(path: "tiny-storage.plist", directoryHint: .notDirectory)
         self.fileURL = fileURL
         
-        self.logger = logger
+        let activeLogger = logger ?? OSLogTinyStorageLogger(minLogLevel: logThreshold)
+        self.logger = activeLogger
         
-        self.dictionaryRepresentation = TinyStorage.retrieveStorageDictionary(directoryURL: directoryURL, fileURL: fileURL, logger: logger) ?? [:]
+        self.dictionaryRepresentation = TinyStorage.retrieveStorageDictionary(directoryURL: directoryURL, fileURL: fileURL, logger: activeLogger) ?? [:]
 
         do {
             let resourceValues = try fileURL.resourceValues(forKeys: [.generationIdentifierKey])
@@ -1327,14 +1328,25 @@ private final class KeySignal {
     func bump() { value &+= 1 }
 }
 
-nonisolated public enum TinyStorageLogLevel {
-    case debug, info, warning, error, fault, critical, trace, notice
+nonisolated public enum TinyStorageLogLevel: Int, Comparable, Sendable {
+    case trace = 0
+    case debug = 1
+    case info = 2
+    case notice = 3
+    case warning = 4
+    case error = 5
+    case fault = 6
+    case critical = 7
     
     var shouldPauseDuringDebug: Bool {
         switch self {
-        case .debug, .info, .warning, .trace, .notice: false
+        case .trace, .debug, .info, .notice, .warning: false
         case .error, .fault, .critical: true
         }
+    }
+    
+    public static func < (lhs: TinyStorageLogLevel, rhs: TinyStorageLogLevel) -> Bool {
+        lhs.rawValue < rhs.rawValue
     }
 }
 
@@ -1343,11 +1355,16 @@ nonisolated public protocol TinyStorageLogging {
 }
 
 nonisolated public struct OSLogTinyStorageLogger: TinyStorageLogging {
-    private let logger: os.Logger = .init(subsystem: "com.christianselig.TinyStorage", category: "general")
+    private let logger: os.Logger = .init(subsystem: "at.sidebar.Sidebar.storage", category: "general")
+    private let minLogLevel: TinyStorageLogLevel
     
-    public init() {}
+    public init(minLogLevel: TinyStorageLogLevel = .trace) {
+        self.minLogLevel = minLogLevel
+    }
     
     public func log(_ level: TinyStorageLogLevel, _ message: String, file: String, function: String, line: Int) {
+        guard level >= minLogLevel else { return }
+        
         let prefix = "[\(file)#\(line) \(function)] "
         
         switch level {
