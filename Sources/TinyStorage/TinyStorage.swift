@@ -79,7 +79,7 @@ nonisolated public final class TinyStorage: @unchecked Sendable {
         let directoryURL = insideDirectory.appending(path: name, directoryHint: .isDirectory)
         self.directoryURL = directoryURL
         
-        let fileURL = directoryURL.appending(path: "tiny-storage.plist", directoryHint: .notDirectory)
+        let fileURL = directoryURL.appending(path: "storage.data", directoryHint: .notDirectory)
         self.fileURL = fileURL
         
         let activeLogger = logger ?? OSLogTinyStorageLogger(minLogLevel: logThreshold)
