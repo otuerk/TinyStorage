@@ -48,9 +48,9 @@ nonisolated public final class TinyStorage: @unchecked Sendable {
     
     private var source: DispatchSourceFileSystemObject?
     
-    public static let didChangeNotification = Notification.Name(rawValue: "com.christianselig.TinyStorage.didChangeNotification")
-    public static let changedKeysUserInfoKey = "TinyStorage.changedKeys"
-    public static let writeIDUserInfoKey = "TinyStorage.WriteIDKey"
+    public static let didChangeNotification = Notification.Name(rawValue: "at.sidebar.Sidebar.storage.didChangeNotification")
+    public static let changedKeysUserInfoKey = "Sidebar.Storage.changedKeys"
+    public static let writeIDUserInfoKey = "Sidebar.Storage.WriteIDKey"
     
     private let logger: TinyStorageLogging
     
@@ -70,7 +70,7 @@ nonisolated public final class TinyStorage: @unchecked Sendable {
     ///
     ///  - Note: TinyStorage creates a directory that the backing plist files lives in, for instance if you specify your name as "tinystorage-general-prefs" the file will live in ./tiny-storage-general-prefs/tiny-storage.plist where . is the directory you pass as `insideDirectory`.
     public init(insideDirectory: URL, name: String, logger: TinyStorageLogging? = nil, logThreshold: TinyStorageLogLevel = .trace) {
-        let dispatchQueue = DispatchQueue(label: "TinyStorageInMemory", attributes: .concurrent)
+        let dispatchQueue = DispatchQueue(label: "SidebarStorageInMemory", attributes: .concurrent)
         dispatchQueue.setSpecific(key: dispatchQueueKey, value: ())
         self.dispatchQueue = dispatchQueue
         
